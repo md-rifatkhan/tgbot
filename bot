@@ -1,0 +1,47 @@
+import openai
+import requests
+import json
+
+# Initialize the OpenAI API client
+openai.api_key = "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"
+
+# Your Telegram Bot API key
+BOT_API_KEY = "5979206524:AAGKsfM4GBmUnBPZqbhcflInX9ihTphgcGs"
+
+# Define a function that sends a message to Telegram
+def send_message(chat_id, text):
+    url = f"https://api.telegram.org/bot{BOT_API_KEY}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
+    response = requests.post(url, json=payload)
+    return response.json()
+
+# Define a function that retrieves the latest message sent to the bot
+def get_latest_message():
+    url = f"https://api.telegram.org/bot{BOT_API_KEY}/getUpdates"
+    response = requests.get(url)
+    result = response.json()
+    if result["ok"]:
+        return result["result"][-1]["message"]
+    else:
+        return None
+
+# The main chatbot loop
+while True:
+    # Get the latest message sent to the bot
+    message = get_latest_message()
+    if message:
+        # Use the OpenAI API to generate a response
+        chat_id = message["chat"]["id"]
+        user_input = message["text"]
+        response = openai.Completion.create(
+            engine="text-davinci-002",
+            prompt=f"{user_input}\n",
+            max_tokens=1024,
+            n=1,
+            stop=None,
+            temperature=0.5,
+        ).choices[0].text
+
+        # Send the response back to Telegram
+        send_message(chat_id, response)
+        
